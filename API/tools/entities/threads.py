@@ -1,6 +1,8 @@
+from API.tools.entities import users, forums
+
 __author__ = 'warprobot'
 
-from API.DBTools import users, forums, DBconnect
+from API.tools import DBconnect
 
 """
 Helper class to manipulate with threads.
@@ -8,23 +10,21 @@ Helper class to manipulate with threads.
 
 
 def save_thread(forum, title, isClosed, user, date, message, slug, optional):
-    DBconnect.exist(entity="Users", identificator="email", value=user)
-    DBconnect.exist(entity="Forums", identificator="short_name", value=forum)
+    DBconnect.exist(entity="Users", identifier="email", value=user)
+    DBconnect.exist(entity="Forums", identifier="short_name", value=forum)
 
     isDeleted = 0
     if "isDeleted" in optional:
         isDeleted = optional["isDeleted"]
-    thread = DBconnect.exec_query(
+    thread = DBconnect.select_query(
         'select date, forum, id, isClosed, isDeleted, message, slug, title, user, dislikes, likes, points, posts '
         'FROM Threads WHERE slug = %s', (slug, )
     )
     if len(thread) == 0:
-        DBconnect.exec_update(
-            'INSERT INTO Threads (forum, title, isClosed, user, date, message, slug, isDeleted) '
-            'VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
-            (forum, title, isClosed, user, date, message, slug, isDeleted, )
-        )
-        thread = DBconnect.exec_query(
+        DBconnect.update_query('INSERT INTO Threads (forum, title, isClosed, user, date, message, slug, isDeleted) '
+                               'VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+                               (forum, title, isClosed, user, date, message, slug, isDeleted, ))
+        thread = DBconnect.select_query(
             'select date, forum, id, isClosed, isDeleted, message, slug, title, user, dislikes, likes, points, posts '
             'FROM Threads WHERE slug = %s', (slug, )
         )
@@ -40,7 +40,7 @@ def save_thread(forum, title, isClosed, user, date, message, slug, optional):
 
 
 def details(id, related):
-    thread = DBconnect.exec_query(
+    thread = DBconnect.select_query(
         'select date, forum, id, isClosed, isDeleted, message, slug, title, user, dislikes, likes, points, posts '
         'FROM Threads WHERE id = %s', (id, )
     )
@@ -78,19 +78,19 @@ def thread_description(thread):
 
 
 def vote(id, vote):
-    DBconnect.exist(entity="Threads", identificator="id", value=id)
+    DBconnect.exist(entity="Threads", identifier="id", value=id)
 
     if vote == -1:
-        DBconnect.exec_update("UPDATE Threads SET dislikes=dislikes+1, points=points-1 where id = %s", (id, ))
+        DBconnect.update_query("UPDATE Threads SET dislikes=dislikes+1, points=points-1 where id = %s", (id, ))
     else:
-        DBconnect.exec_update("UPDATE Threads SET likes=likes+1, points=points+1  where id = %s", (id, ))
+        DBconnect.update_query("UPDATE Threads SET likes=likes+1, points=points+1  where id = %s", (id, ))
 
     return details(id=id, related=[])
 
 
 def open_close_thread(id, isClosed):
-    DBconnect.exist(entity="Threads", identificator="id", value=id)
-    DBconnect.exec_update("UPDATE Threads SET isClosed = %s WHERE id = %s", (isClosed, id, ))
+    DBconnect.exist(entity="Threads", identifier="id", value=id)
+    DBconnect.update_query("UPDATE Threads SET isClosed = %s WHERE id = %s", (isClosed, id, ))
 
     response = {
         "thread": id
@@ -100,18 +100,17 @@ def open_close_thread(id, isClosed):
 
 
 def update_thread(id, slug, message):
-    DBconnect.exist(entity="Threads", identificator="id", value=id)
-    DBconnect.exec_update('UPDATE Threads SET slug = %s, message = %s WHERE id = %s',
-                          (slug, message, id, ))
+    DBconnect.exist(entity="Threads", identifier="id", value=id)
+    DBconnect.update_query('UPDATE Threads SET slug = %s, message = %s WHERE id = %s', (slug, message, id, ))
 
     return details(id=id, related=[])
 
 
 def threads_list(entity, identificator, related, params):
     if entity == "forum":
-        DBconnect.exist(entity="Forums", identificator="short_name", value=identificator)
+        DBconnect.exist(entity="Forums", identifier="short_name", value=identificator)
     if entity == "user":
-        DBconnect.exist(entity="Users", identificator="email", value=identificator)
+        DBconnect.exist(entity="Users", identifier="email", value=identificator)
     query = "SELECT id FROM Threads WHERE " + entity + " = %s "
     parameters = [identificator]
 
@@ -125,7 +124,7 @@ def threads_list(entity, identificator, related, params):
     if "limit" in params:
         query += " LIMIT " + str(params["limit"])
 
-    thread_ids_tuple = DBconnect.exec_query(query=query, params=parameters)
+    thread_ids_tuple = DBconnect.select_query(query=query, params=parameters)
     thread_list = []
 
     for id in thread_ids_tuple:
@@ -136,8 +135,8 @@ def threads_list(entity, identificator, related, params):
 
 
 def remove_restore(thread_id, status):
-    DBconnect.exist(entity="Threads", identificator="id", value=thread_id)
-    DBconnect.exec_update("UPDATE Threads SET isDeleted = %s WHERE id = %s", (status, thread_id, ))
+    DBconnect.exist(entity="Threads", identifier="id", value=thread_id)
+    DBconnect.update_query("UPDATE Threads SET isDeleted = %s WHERE id = %s", (status, thread_id, ))
 
     response = {
         "thread": thread_id

@@ -8,20 +8,20 @@ Helpers to make HttpResponses
 """
 
 
-def get_related(request_data):
+def get_related(request):
     try:
-        related = request_data["related"]
+        related = request["related"]
     except KeyError:
         related = []
     return related
 
 
-def get_optional(request_data, possible_values):
+def extras(request, values):
     optional = {}
-    for value in possible_values:
+    for value in values:
         try:
-            optional[value] = request_data[value]
-        except KeyError:
+            optional[value] = request[value]
+        except Exception:
             continue
     return optional
 
@@ -29,16 +29,13 @@ def get_optional(request_data, possible_values):
 def GET_parameters(request_data):
     data = {}
     for el in request_data.GET:
-        #if el == "related":
-        #    data["related"] = request_data.GET.get(el)#getlist("related")
-        #else:
         data[el] = request_data.GET.get(el)
     return data
 
 
-def return_response(object):
-    response_data = {"code": 0, "response": object}
-    return HttpResponse(json.dumps(response_data), content_type='application/json')
+def return_response(response):
+    content = {"code": 0, "response": response}
+    return HttpResponse(json.dumps(content), content_type='application/json')
 
 
 def return_error(message):

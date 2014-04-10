@@ -1,6 +1,7 @@
 __author__ = 'warprobot'
 
-from API.DBTools import DBconnect
+from API.tools import DBconnect
+
 """
 Helper class to manipulate with users.
 """
@@ -11,9 +12,10 @@ def save_user(email, username, about, name, optional):
     if "isAnonymous" in optional:
         isAnonymous = optional["isAnonymous"]
     try:
-        user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s', (email, ))
+        user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
+                           (email, ))
         if len(user) == 0:
-            DBconnect.exec_update(
+            DBconnect.update_query(
                 'INSERT INTO Users (email, about, name, username, isAnonymous) VALUES (%s, %s, %s, %s, %s)',
                 (email, about, name, username, isAnonymous, ))
         user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
@@ -25,9 +27,9 @@ def save_user(email, username, about, name, optional):
 
 
 def update_user(email, about, name):
-    DBconnect.exist(entity="Users", identificator="email", value=email)
-    DBconnect.exec_update('UPDATE Users SET email = %s, about = %s, name = %s WHERE email = %s',
-                          (email, about, name, email, ))
+    DBconnect.exist(entity="Users", identifier="email", value=email)
+    DBconnect.update_query('UPDATE Users SET email = %s, about = %s, name = %s WHERE email = %s',
+                           (email, about, name, email, ))
     return details(email)
 
 
@@ -37,7 +39,7 @@ def followers(email, type):
         where = "followee"
     if type == "followee":
         where = "follower"
-    f_list = DBconnect.exec_query(
+    f_list = DBconnect.select_query(
         "SELECT " + type + " FROM Followers JOIN Users ON Users.email = Followers." + type +
         " WHERE " + where + " = %s ", (email, )
     )
@@ -55,9 +57,8 @@ def details(email):
 
 
 def user_subscriptions(email):
-
     s_list = []
-    subscriptions = DBconnect.exec_query('select thread FROM Subscriptions WHERE user = %s', (email, ))
+    subscriptions = DBconnect.select_query('select thread FROM Subscriptions WHERE user = %s', (email, ))
     for el in subscriptions:
         s_list.append(el[0])
     return s_list
@@ -87,11 +88,11 @@ def user_describe(user):
 
 
 def select_user(query, params):
-    return DBconnect.exec_query(query, params)
+    return DBconnect.select_query(query, params)
 
 
-def tuple2list(list):
-    new_list = []
-    for el in list:
-        new_list.append(el[0])
-    return new_list
+def tuple2list(t):
+    l = []
+    for el in t:
+        l.append(el[0])
+    return l

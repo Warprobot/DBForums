@@ -1,8 +1,9 @@
+from API.tools.entities import users, forums, threads
+
 __author__ = 'warprobot'
 
-from API.DBTools import DBconnect
-from API.DBTools.DBconnect import DBConnection
-from API.DBTools import users, forums, threads
+from API.tools import DBconnect
+from API.tools.DBconnect import DBConnection
 
 
 """
@@ -11,15 +12,15 @@ Helper class to manipulate with posts.
 
 
 def create(date, thread, message, user, forum, optional):
-    DBconnect.exist(entity="Threads", identificator="id", value=thread)
-    DBconnect.exist(entity="Forums", identificator="short_name", value=forum)
-    DBconnect.exist(entity="Users", identificator="email", value=user)
-    if len(DBconnect.exec_query("SELECT Threads.id FROM Threads JOIN Forums ON Threads.forum = Forums.short_name "
+    DBconnect.exist(entity="Threads", identifier="id", value=thread)
+    DBconnect.exist(entity="Forums", identifier="short_name", value=forum)
+    DBconnect.exist(entity="Users", identifier="email", value=user)
+    if len(DBconnect.select_query("SELECT Threads.id FROM Threads JOIN Forums ON Threads.forum = Forums.short_name "
                                 "WHERE Threads.forum = %s AND Threads.id = %s", (forum, thread, ))) == 0:
-        raise Exception("no thread with id = " + thread + " in forum " + forum)
+        raise Exception("no thread with id = " + str(thread) + " in forum " + forum)
     if "parent" in optional:
-        if len(DBconnect.exec_query("SELECT Posts.id FROM Posts JOIN Threads ON Threads.id = Posts.thread "
-                             "WHERE Posts.id = %s AND Threads.id = %s", (optional["parent"], thread, ))) == 0:
+        if len(DBconnect.select_query("SELECT Posts.id FROM Posts JOIN Threads ON Threads.id = Posts.thread "
+                                    "WHERE Posts.id = %s AND Threads.id = %s", (optional["parent"], thread, ))) == 0:
             raise Exception("No post with id = " + optional["parent"])
     query = "INSERT INTO Posts (message, user, forum, thread, date"
     values = "(%s, %s, %s, %s, %s"
@@ -27,7 +28,7 @@ def create(date, thread, message, user, forum, optional):
 
     #optional_data = ["parent", "isApproved", "isHighlighted", "isEdited", "isSpam", "isDeleted"]
     for param in optional:
-        query += ", "+param
+        query += ", " + param
         values += ", %s"
         parameters.append(optional[param])
 
@@ -48,7 +49,7 @@ def create(date, thread, message, user, forum, optional):
         except Exception as e:
             con.rollback()
             raise Exception("Database error: " + e.message)
-        #DatabaseConnection.connection.commit()
+            #DatabaseConnection.connection.commit()
         post_id = cursor.lastrowid
         cursor.close()
 
@@ -61,10 +62,10 @@ def create(date, thread, message, user, forum, optional):
     return post
 
 
-def details(id, related):
-    post = post_query(id)
+def details(details_id, related):
+    post = post_query(details_id)
     if post is None:
-        raise Exception("no post with id = "+id)
+        raise Exception("no post with id = " + details_id)
 
     if "user" in related:
         post["user"] = users.details(post["user"])
@@ -76,19 +77,16 @@ def details(id, related):
     return post
 
 
-def posts_list(entity, identificator, related, params):
+def posts_list(entity, params, identifier, related=[]):
     if entity == "forum":
-        DBconnect.exist(entity="Forums", identificator="short_name", value=identificator)
-
-    #-------------------------------------------------------------------------------------------------------------------
+        DBconnect.exist(entity="Forums", identifier="short_name", value=identifier)
     if entity == "thread":
-        DBconnect.exist(entity="Threads", identificator="id", value=identificator)
-    #-------------------------------------------------------------------------------------------------------------------
+        DBconnect.exist(entity="Threads", identifier="id", value=identifier)
 
     if entity == "user":
-        DBconnect.exist(entity="Users", identificator="email", value=identificator)
+        DBconnect.exist(entity="Users", identifier="email", value=identifier)
     query = "SELECT id FROM Posts WHERE " + entity + " = %s "
-    parameters = [identificator]
+    parameters = [identifier]
     if "since" in params:
         query += " AND date >= %s"
         parameters.append(params["since"])
@@ -98,40 +96,39 @@ def posts_list(entity, identificator, related, params):
         query += " ORDER BY date DESC "
     if "limit" in params:
         query += " LIMIT " + str(params["limit"])
-    post_ids = DBconnect.exec_query(query=query, params=parameters)
+    post_ids = DBconnect.select_query(query=query, params=parameters)
     post_list = []
     for id in post_ids:
         id = id[0]
-        post_list.append(details(id=id, related=related))
+        post_list.append(details(details_id=id, related=related))
     return post_list
 
 
 def remove_restore(post_id, status):
-    DBconnect.exist(entity="Posts", identificator="id", value=post_id)
-    DBconnect.exec_update("UPDATE Posts SET isDeleted = %s WHERE Posts.id = %s", (status, post_id, ))
+    DBconnect.exist(entity="Posts", identifier="id", value=post_id)
+    DBconnect.update_query("UPDATE Posts SET isDeleted = %s WHERE Posts.id = %s", (status, post_id, ))
     return {
         "post": post_id
     }
 
 
-def update(id, message):
-    DBconnect.exist(entity="Posts", identificator="id", value=id)
-    DBconnect.exec_update('UPDATE Posts SET message = %s WHERE id = %s', (message, id, ))
-    return details(id=id, related=[])
+def update(update_id, message):
+    DBconnect.exist(entity="Posts", identifier="id", value=update_id)
+    DBconnect.update_query('UPDATE Posts SET message = %s WHERE id = %s', (message, update_id, ))
+    return details(details_id=update_id, related=[])
 
 
-def vote(id, vote):
-    DBconnect.exist(entity="Posts", identificator="id", value=id)
-    if vote == -1:
-        DBconnect.exec_update("UPDATE Posts SET dislikes=dislikes+1, points=points-1 where id = %s", (id, ))
+def vote(vote_id, vote_type):
+    DBconnect.exist(entity="Posts", identifier="id", value=vote_id)
+    if vote_type == -1:
+        DBconnect.update_query("UPDATE Posts SET dislikes=dislikes+1, points=points-1 where id = %s", (vote_id, ))
     else:
-        DBconnect.exec_update("UPDATE Posts SET likes=likes+1, points=points+1  where id = %s", (id, ))
-    return details(id=id, related=[])
+        DBconnect.update_query("UPDATE Posts SET likes=likes+1, points=points+1  where id = %s", (vote_id, ))
+    return details(details_id=vote_id, related=[])
 
-#-----------------------------------------------------------------------------------------------------------------------
 
 def select_post(query, params):
-    return DBconnect.exec_query(query, params)
+    return DBconnect.select_query(query, params)
 
 
 def post_query(id):
