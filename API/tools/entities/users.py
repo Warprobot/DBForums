@@ -2,28 +2,24 @@ __author__ = 'warprobot'
 
 from API.tools import DBconnect
 
-"""
-Helper class to manipulate with users.
-"""
-
 
 def save_user(email, username, about, name, optional):
     isAnonymous = 0
     if "isAnonymous" in optional:
         isAnonymous = optional["isAnonymous"]
     try:
-        user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
+        user = DBconnect.select_query('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
                            (email, ))
         if len(user) == 0:
             DBconnect.update_query(
                 'INSERT INTO Users (email, about, name, username, isAnonymous) VALUES (%s, %s, %s, %s, %s)',
                 (email, about, name, username, isAnonymous, ))
-        user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
+        user = DBconnect.select_query('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s',
                            (email, ))
     except Exception as e:
         raise Exception(e.message)
 
-    return user_describe(user)
+    return user_format(user)
 
 
 def update_user(email, about, name):
@@ -47,7 +43,8 @@ def followers(email, type):
 
 
 def details(email):
-    user = user_query(email)
+    user = DBconnect.select_query('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s', (email, ))
+    user = user_format(user)
     if user is None:
         raise Exception("No user with email " + email)
     user["followers"] = followers(email, "follower")
@@ -64,17 +61,7 @@ def user_subscriptions(email):
     return s_list
 
 
-#-----------------------------------------------------------------------------------------------------------------------
-
-
-def user_query(email):
-    user = select_user('select email, about, isAnonymous, id, name, username FROM Users WHERE email = %s', (email, ))
-    if len(user) == 0:
-        return None
-    return user_describe(user)
-
-
-def user_describe(user):
+def user_format(user):
     user = user[0]
     user_response = {
         'about': user[1],
@@ -85,10 +72,6 @@ def user_describe(user):
         'username': user[5]
     }
     return user_response
-
-
-def select_user(query, params):
-    return DBconnect.select_query(query, params)
 
 
 def tuple2list(t):

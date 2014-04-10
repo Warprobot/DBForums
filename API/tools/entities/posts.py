@@ -49,7 +49,6 @@ def create(date, thread, message, user, forum, optional):
         except Exception as e:
             con.rollback()
             raise Exception("Database error: " + e.message)
-            #DatabaseConnection.connection.commit()
         post_id = cursor.lastrowid
         cursor.close()
 
@@ -127,20 +126,17 @@ def vote(vote_id, vote_type):
     return details(details_id=vote_id, related=[])
 
 
-def select_post(query, params):
-    return DBconnect.select_query(query, params)
-
 
 def post_query(id):
-    post = select_post('select date, dislikes, forum, id, isApproved, isDeleted, isEdited, '
+    post = DBconnect.select_query('select date, dislikes, forum, id, isApproved, isDeleted, isEdited, '
                        'isHighlighted, isSpam, likes, message, parent, points, thread, user '
                        'FROM Posts WHERE id = %s', (id, ))
     if len(post) == 0:
         return None
-    return post_describe(post)
+    return post_formated(post)
 
 
-def post_describe(post):
+def post_formated(post):
     post = post[0]
     post_response = {
         'date': str(post[0]),

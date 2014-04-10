@@ -28,7 +28,22 @@ def save_thread(forum, title, isClosed, user, date, message, slug, optional):
             'select date, forum, id, isClosed, isDeleted, message, slug, title, user, dislikes, likes, points, posts '
             'FROM Threads WHERE slug = %s', (slug, )
         )
-    response = thread_description(thread)
+    thread = thread[0]
+    response = {
+        'date': str(thread[0]),
+        'forum': thread[1],
+        'id': thread[2],
+        'isClosed': bool(thread[3]),
+        'isDeleted': bool(thread[4]),
+        'message': thread[5],
+        'slug': thread[6],
+        'title': thread[7],
+        'user': thread[8],
+        'dislikes': thread[9],
+        'likes': thread[10],
+        'points': thread[11],
+        'posts': thread[12],
+    }
 
     # Delete few extra elements
     del response["dislikes"]
@@ -46,20 +61,8 @@ def details(id, related):
     )
     if len(thread) == 0:
         raise Exception('No thread exists with id=' + str(id))
-    thread = thread_description(thread)
-
-    if "user" in related:
-        thread["user"] = users.details(thread["user"])
-    if "forum" in related:
-        thread["forum"] = forums.details(short_name=thread["forum"], related=[])
-
-    return thread
-
-
-# Chaos
-def thread_description(thread):
     thread = thread[0]
-    response = {
+    thread = {
         'date': str(thread[0]),
         'forum': thread[1],
         'id': thread[2],
@@ -74,7 +77,13 @@ def thread_description(thread):
         'points': thread[11],
         'posts': thread[12],
     }
-    return response
+
+    if "user" in related:
+        thread["user"] = users.details(thread["user"])
+    if "forum" in related:
+        thread["forum"] = forums.details(short_name=thread["forum"], related=[])
+
+    return thread
 
 
 def vote(id, vote):
@@ -106,13 +115,13 @@ def update_thread(id, slug, message):
     return details(id=id, related=[])
 
 
-def threads_list(entity, identificator, related, params):
+def threads_list(entity, identifier, related, params):
     if entity == "forum":
-        DBconnect.exist(entity="Forums", identifier="short_name", value=identificator)
+        DBconnect.exist(entity="Forums", identifier="short_name", value=identifier)
     if entity == "user":
-        DBconnect.exist(entity="Users", identifier="email", value=identificator)
+        DBconnect.exist(entity="Users", identifier="email", value=identifier)
     query = "SELECT id FROM Threads WHERE " + entity + " = %s "
-    parameters = [identificator]
+    parameters = [identifier]
 
     if "since" in params:
         query += " AND date >= %s"

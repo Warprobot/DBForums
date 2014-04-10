@@ -2,7 +2,7 @@ from API.tools.entities import posts, threads, subscriptions
 
 __author__ = 'warprobot'
 
-from API.Views.helpers import return_response, get_related, test_required, extras, GET_parameters, return_error
+from API.Views.helpers import related_exists, choose_required, extras
 import json
 from django.http import HttpResponse
 
@@ -14,30 +14,30 @@ def create(request):
         required_data = ["forum", "title", "isClosed", "user", "date", "message", "slug"]
         optional = extras(request=content, values=["isDeleted"])
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.save_thread(forum=content["forum"], title=content["title"],
                                          isClosed=content["isClosed"],
                                          user=content["user"], date=content["date"],
                                          message=content["message"],
                                          slug=content["slug"], optional=optional)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
 
 def details(request):
     if request.method == "GET":
-        content = GET_parameters(request)
+        content = request.GET.dict()
         required_data = ["thread"]
-        related = get_related(content)
+        related = related_exists(content)
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.details(id=content["thread"], related=related)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -47,11 +47,11 @@ def vote(request):
         content = json.loads(request.body)
         required_data = ["thread", "vote"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.vote(id=content["thread"], vote=content["vote"])
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -61,11 +61,11 @@ def subscribe(request):
         content = json.loads(request.body)
         required_data = ["thread", "user"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             subscription = subscriptions.save_subscription(email=content["user"], thread_id=content["thread"])
         except Exception as e:
-            return return_error(e.message)
-        return return_response(subscription)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": subscription}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -75,12 +75,12 @@ def unsubscribe(request):
         content = json.loads(request.body)
         required_data = ["thread", "user"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             subscription = subscriptions.remove_subscription(email=content["user"],
                                                              thread_id=content["thread"])
         except Exception as e:
-            return return_error(e.message)
-        return return_response(subscription)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": subscription}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -90,11 +90,11 @@ def open(request):
         content = json.loads(request.body)
         required_data = ["thread"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.open_close_thread(id=content["thread"], isClosed=0)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -104,11 +104,11 @@ def close(request):
         content = json.loads(request.body)
         required_data = ["thread"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.open_close_thread(id=content["thread"], isClosed=1)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -118,12 +118,12 @@ def update(request):
         content = json.loads(request.body)
         required_data = ["thread", "slug", "message"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.update_thread(id=content["thread"], slug=content["slug"],
                                            message=content["message"])
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -133,11 +133,11 @@ def remove(request):
         content = json.loads(request.body)
         required_data = ["thread"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.remove_restore(thread_id=content["thread"], status=1)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
@@ -147,49 +147,49 @@ def restore(request):
         content = json.loads(request.body)
         required_data = ["thread"]
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             thread = threads.remove_restore(thread_id=content["thread"], status=0)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(thread)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": thread}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
 
 def thread_list(request):
     if request.method == "GET":
-        content = GET_parameters(request)
-        identificator = None
+        content = request.GET.dict()
         try:
-            identificator = content["forum"]
+            identifier = content["forum"]
             entity = "forum"
         except KeyError:
             try:
-                identificator = content["user"]
+                identifier = content["user"]
                 entity = "user"
             except KeyError:
-                return return_error("No user or forum parameters setted")
+                return HttpResponse(json.dumps({"code": 1, "response": "Any methods?"}),
+                                    content_type='application/json')
         optional = extras(request=content, values=["limit", "order", "since"])
         try:
-            t_list = threads.threads_list(entity=entity, identificator=identificator, related=[], params=optional)
+            t_list = threads.threads_list(entity=entity, identifier=identifier, related=[], params=optional)
         except Exception as e:
-            return return_error(e.message)
-        return return_response(t_list)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": t_list}), content_type='application/json')
     else:
         return HttpResponse(status=405)
 
 
 def list_posts(request):
     if request.method == "GET":
-        content = GET_parameters(request)
+        content = request.GET.dict()
         required_data = ["thread"]
         entity = "thread"
         optional = extras(request=content, values=["limit", "order", "since"])
         try:
-            test_required(data=content, required=required_data)
+            choose_required(data=content, required=required_data)
             p_list = posts.posts_list(entity=entity, params=optional, identifier=content["thread"], related=[])
         except Exception as e:
-            return return_error(e.message)
-        return return_response(p_list)
+            return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
+        return HttpResponse(json.dumps({"code": 0, "response": p_list}), content_type='application/json')
     else:
         return HttpResponse(status=405)
