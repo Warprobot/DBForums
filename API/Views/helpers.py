@@ -10,12 +10,7 @@ def related_exists(request):
 
 
 def extras(request, values):
-    optional = {}
-    for v in values:
-        try:
-            optional[v] = request[v]
-        except Exception:
-            continue
+    optional = dict([(k, request[k]) for k in set(values) if k in request])
     return optional
 
 
