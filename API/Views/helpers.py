@@ -9,7 +9,7 @@ def related_exists(request):
     return related
 
 
-def extras(request, values):
+def intersection(request, values):
     optional = dict([(k, request[k]) for k in set(values) if k in request])
     return optional
 

@@ -6,7 +6,7 @@ __author__ = 'warprobot'
 API functions for user
 """
 
-from API.Views.helpers import choose_required, extras
+from API.Views.helpers import choose_required, intersection
 import json
 from django.http import HttpResponse
 
@@ -16,7 +16,7 @@ def create(request):
 
         request_data = json.loads(request.body)
         required_data = ["email", "username", "name", "about"]
-        optional = extras(request=request_data, values=["isAnonymous"])
+        optional = intersection(request=request_data, values=["isAnonymous"])
         try:
             choose_required(data=request_data, required=required_data)
             user = users.save_user(email=request_data["email"], username=request_data["username"],
@@ -74,7 +74,7 @@ def list_followers(request):
     if request.method == "GET":
         request_data = request.GET.dict()
         required_data = ["user"]
-        followers_param = extras(request=request_data, values=["limit", "order", "since_id"])
+        followers_param = intersection(request=request_data, values=["limit", "order", "since_id"])
         try:
             choose_required(data=request_data, required=required_data)
             follower_l = followers.followers_list(email=request_data["user"], type="follower", params=followers_param)
@@ -89,7 +89,7 @@ def list_following(request):
     if request.method == "GET":
         request_data = request.GET.dict()
         required_data = ["user"]
-        followers_param = extras(request=request_data, values=["limit", "order", "since_id"])
+        followers_param = intersection(request=request_data, values=["limit", "order", "since_id"])
         try:
             choose_required(data=request_data, required=required_data)
             followings = followers.followers_list(email=request_data["user"], type="followee", params=followers_param)
@@ -104,7 +104,7 @@ def list_posts(request):
     if request.method == "GET":
         request_data = request.GET.dict()
         required_data = ["user"]
-        optional = extras(request=request_data, values=["limit", "order", "since"])
+        optional = intersection(request=request_data, values=["limit", "order", "since"])
         try:
             choose_required(data=request_data, required=required_data)
             posts_l = posts.posts_list(entity="user", params=optional, identifier=request_data["user"], related=[])

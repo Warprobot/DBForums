@@ -2,7 +2,7 @@ from API.tools.entities import posts, threads, subscriptions
 
 __author__ = 'warprobot'
 
-from API.Views.helpers import related_exists, choose_required, extras
+from API.Views.helpers import related_exists, choose_required, intersection
 import json
 from django.http import HttpResponse
 
@@ -12,7 +12,7 @@ def create(request):
 
         content = json.loads(request.body)
         required_data = ["forum", "title", "isClosed", "user", "date", "message", "slug"]
-        optional = extras(request=content, values=["isDeleted"])
+        optional = intersection(request=content, values=["isDeleted"])
         try:
             choose_required(data=content, required=required_data)
             thread = threads.save_thread(forum=content["forum"], title=content["title"],
@@ -169,7 +169,7 @@ def thread_list(request):
             except KeyError:
                 return HttpResponse(json.dumps({"code": 1, "response": "Any methods?"}),
                                     content_type='application/json')
-        optional = extras(request=content, values=["limit", "order", "since"])
+        optional = intersection(request=content, values=["limit", "order", "since"])
         try:
             t_list = threads.threads_list(entity=entity, identifier=identifier, related=[], params=optional)
         except Exception as e:
@@ -184,7 +184,7 @@ def list_posts(request):
         content = request.GET.dict()
         required_data = ["thread"]
         entity = "thread"
-        optional = extras(request=content, values=["limit", "order", "since"])
+        optional = intersection(request=content, values=["limit", "order", "since"])
         try:
             choose_required(data=content, required=required_data)
             p_list = posts.posts_list(entity=entity, params=optional, identifier=content["thread"], related=[])

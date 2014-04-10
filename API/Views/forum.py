@@ -2,7 +2,7 @@ from API.tools.entities import forums, posts, threads
 
 __author__ = 'warprobot'
 
-from API.Views.helpers import related_exists, choose_required, extras
+from API.Views.helpers import related_exists, choose_required, intersection
 import json
 from django.http import HttpResponse
 
@@ -42,7 +42,7 @@ def list_threads(request):
         content = request.GET.dict()
         required_data = ["forum"]
         related = related_exists(content)
-        optional = extras(request=content, values=["limit", "order", "since"])
+        optional = intersection(request=content, values=["limit", "order", "since"])
         try:
             choose_required(data=content, required=required_data)
             threads_l = threads.threads_list(entity="forum", identifier=content["forum"],
@@ -60,7 +60,7 @@ def list_posts(request):
         required_data = ["forum"]
         related = related_exists(content)
 
-        optional = extras(request=content, values=["limit", "order", "since"])
+        optional = intersection(request=content, values=["limit", "order", "since"])
         try:
             choose_required(data=content, required=required_data)
             posts_l = posts.posts_list(entity="forum", params=optional, identifier=content["forum"],
@@ -76,7 +76,7 @@ def list_users(request):
     if request.method == "GET":
         content = request.GET.dict()
         required_data = ["forum"]
-        optional = extras(request=content, values=["limit", "order", "since_id"])
+        optional = intersection(request=content, values=["limit", "order", "since_id"])
         try:
             choose_required(data=content, required=required_data)
             users_l = forums.list_users(content["forum"], optional)

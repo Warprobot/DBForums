@@ -4,7 +4,7 @@ __author__ = 'warprobot'
 
 import json
 from django.http import HttpResponse
-from API.Views.helpers import choose_required, extras, related_exists
+from API.Views.helpers import choose_required, intersection, related_exists
 
 
 def create(request):
@@ -13,7 +13,7 @@ def create(request):
         content = json.loads(request.body)
         required_data = ["user", "forum", "thread", "message", "date"]
         optional_data = ["parent", "isApproved", "isHighlighted", "isEdited", "isSpam", "isDeleted"]
-        optional = extras(request=content, values=optional_data)
+        optional = intersection(request=content, values=optional_data)
         try:
             choose_required(data=content, required=required_data)
             post = posts.create(date=content["date"], thread=content["thread"],
@@ -55,7 +55,7 @@ def post_list(request):
             except Exception as e:
                 return HttpResponse(json.dumps({"code": 1, "response": (e.message)}), content_type='application/json')
 
-        optional = extras(request=content, values=["limit", "order", "since"])
+        optional = intersection(request=content, values=["limit", "order", "since"])
         try:
             p_list = posts.posts_list(entity=entity, params=optional, identifier=identifier, related=[])
         except Exception as e:
